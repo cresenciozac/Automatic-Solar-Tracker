@@ -1,0 +1,24 @@
+BILL OF MATERIALS
+Automatic Tracking / Manual Control Micro Solar Panel with IoT Capabilities
+Zac Cresencio — crese002@umn.edu
+EE1301 (001), Prof. Sartori
+4.28.2026
+
+1x	Particle Photon 2, and Particle P2/Photon2/M-SoM Wi-Fi Antenna 2.4/5GHz (PARANTWM1)
+1x	SG90s Micro Servo
+1x	Buachois Mini Polycrystalline Solar Cell, 0.3W 5V 60mA
+2x	PDV-P8103 CDS PHOTORESISTOR 16-33KOHM
+2x 	510 OHM Resistor
+2x	10K OHM Resistor
+2x	10uF Capacitor
+1x	10K OHM Potentiometer
+1x	B3F Tactile Switch 12x12mm
+2x	Generic 5mm Through Hole LED
+1x	4xAA 6V Battery Pack
+1x	DFRobot 78x58mm ProtoBoard
+1x	Solderless Breadboard
+Jumper Wires and Solid Core Wires
+
+!!! Not included due to technical issues or time constraint
+1x	DFROBOT SEN0291 INA219
+1x	DFROBOT I2C 16x2 LCD Display Module
