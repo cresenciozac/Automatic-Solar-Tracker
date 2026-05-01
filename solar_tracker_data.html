@@ -1,0 +1,281 @@
+<html>
+<head>
+  <title>Zac Cresencio EE1301 Solar Tracker</title>
+  <style>
+
+    /* Styling */
+
+      body {
+        background: #1a1a1a;
+        color: #e0e0e0;
+        font-family: 'Courier New', Courier, monospace;
+        padding: 2rem;
+        text-align: center;
+      }
+      h2 { color: #caabd3; } /* subtitle color */
+
+      /* card container */
+      .cards {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 2rem 0;
+      }
+
+      /* individual card settings */
+      .card {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 2px;
+        padding: 1.5rem 2rem;
+        min-width: 140px;
+      }
+
+      /* styling text inside card */
+      .card-label {
+        font-size: 1.2rem;
+        color: #ffffff;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 8px;
+      }
+
+      .val {
+        font-size: 2rem;
+        font-weight: bold;
+      }
+
+      .card-unit {
+        font-size: 1rem;
+        color: #888;
+        margin-top: 4px;
+      }
+
+      /* colored top border of the cards */
+      .card:nth-child(1) {border-top: 3px solid #58a6ff}
+      .card:nth-child(2) {border-top: 3px solid #ff932e}
+      .card:nth-child(3) {border-top: 3px solid #63d259}
+
+      /* text input box */
+      input[type="text"]
+      {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 1rem;
+        padding: 1rem 1rem;
+        text-align: center;
+        width: 150px;
+      }
+
+      input[type="text"], textarea {
+        color: #ffffff;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        border-color: #caabd3;
+      }
+
+      /* Set Position Button */
+      button {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        color: #e0e0e0;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        width: 125px;
+      }
+
+      button:hover {
+        background:#444;
+        border-color:#caabd3;
+      }
+
+  </style>
+</head>
+<body>
+
+  <!-- Page title, author -->
+  <h1>Solar Tracker</h1>
+  <h2>Zac Cresencio — EE1301</h2>
+  
+  <!-- creating 3 different cards, side by side -->
+  <div class="cards">
+
+  <!-- voltage card -->
+  <div class="card">
+    <div class="card-label">Voltage</div>
+    <div class="val" id="voltageVal">—</div>
+    <div class="card-unit">V</div>
+  </div>
+
+  <!-- current card -->
+  <div class="card">
+    <div class="card-label">Current</div>
+    <div class="val" id="currentVal">—</div>
+    <div class="card-unit">mA</div>
+  </div>
+
+  <!-- power card -->
+  <div class="card">
+    <div class="card-label">Power</div>
+    <div class="val" id="powerVal">—</div>
+    <div class="card-unit">mW</div>
+  </div>
+
+</div>
+
+  <!-- Create a text box to change position through a string -->
+  <div style="display: flex; justify-content: center; gap: 15px;">
+      <input type="text" id="posInput" placeholder="0° - 180°"/><br>
+      <button onclick="setPos()"><b>Set Position</b></button>
+  </div><br><br>
+
+  <!-- manually change modes -->
+  <div style="display: flex; justify-content: center; gap: 10px;">
+    <button id="btn-auto" onclick="setMode('auto')">Auto</button>
+    <button id="btn-manual" onclick="setMode('manual')">Manual</button>
+  </div> 
+  <br>
+  <p id="modeDisplay" style="color: #888;">Mode: —</p>
+  <br>
+ 
+  <!-- Create a chart div-->
+  <div>
+    <canvas id="powerChart" width="500" height="200"></canvas>
+  </div>
+
+  <!-- timestamp that shows when data is fetched -->
+  Last Updated: <span id="timestamp">-</span>
+
+  <!-- manually trigger fetch -->
+  <br><br><button onclick="start(this)">Refresh Data</button>
+
+  <br><br><p id="status" style="color:#e0e0e0;"></p>
+
+  <!-- loading jQuery to use $.getJSON for cloud vars -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script>
+
+    // Credentials
+    var deviceID    = "0a10aced202194944a06a0f0";
+    var accessToken = "df258babbb5ad65556e34bd45256e53ef2e620d9";
+    var baseURL     = "https://api.particle.io/v1/devices/";
+
+    // Chart setup to display power
+    var labels = [], dataPoints = [];
+    var chart = new Chart(document.getElementById("powerChart").getContext("2d"), {
+      type: "line", // line chart
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Power (mW)",
+          data: dataPoints, // fetch data from powerVal
+          borderColor: "#63d259",
+          pointBackgroundColor: "#63d259",
+          backgroundColor: "#63d259",
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      
+      // Axis / gridline colors
+      options: {
+        scales: {
+          x: {
+            ticks: { color: "#aaaaaa" },
+            grid:  { color: "rgba(255,255,255,0.1)" }
+          },
+          y: {
+            ticks: { color: "#aaaaaa" },
+            grid:  { color: "rgba(255,255,255,0.1)" }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { color: "#aaaaaa" }
+          }
+        }
+      }
+    });
+
+    // fetches all three variables
+
+    function fetchVar(varName, elementId, callback) {
+    $.ajax({
+        url: baseURL + deviceID + "/" + varName,
+        headers: { "Authorization": "Bearer " + accessToken },
+        success: function(json) {
+            if (callback) callback(json.result);
+            else document.getElementById(elementId).innerHTML = json.result.toFixed(3);
+        },
+        error: function() {
+            document.getElementById("status").innerHTML = "Device offline";
+        }
+    });
+    }
+
+    function start() {
+      fetchVar("voltageVal", "voltageVal");
+      fetchVar("currentVal", "currentVal");
+      fetchVar("powerVal", "powerVal", function(val) {
+        var el = document.getElementById("powerVal");
+        el.innerHTML = val.toFixed(3);
+        el.style.color = val > 0.1 ? "#3fb950" : "#f85149";
+ 
+        labels.push(new Date().toLocaleTimeString());
+        dataPoints.push(val);
+        if (labels.length > 20) { labels.shift(); dataPoints.shift(); }
+        chart.update();
+      });
+ 
+      document.getElementById("timestamp").textContent = new Date().toLocaleTimeString();
+    }
+ 
+    function setPos() {
+      var pos = document.getElementById("posInput").value;
+      $.ajax({
+        url: baseURL + deviceID + "/solar_setPos",
+        method: "POST",
+        headers: { "Authorization": "Bearer " + accessToken },
+        data: { arg: pos },
+        success: function(response) {
+          console.log("Response: " + response.return_value);
+        },
+        error: function() {
+          document.getElementById("status").innerHTML = "Failed to set position";
+        }
+      });
+    }
+
+  function setMode(mode) {
+    $.ajax({
+      type: "POST",
+      url: "https://api.particle.io/v1/devices/" + deviceID + "/solar_setMode",
+      data: {
+        access_token: accessToken,
+        arg: mode
+      },
+      success: function(response) {
+        document.getElementById("modeDisplay").innerHTML = "Mode: " + mode;
+        document.getElementById("btn-auto").style.borderColor   = mode == "auto"   ? "#63d259" : "#444";
+        document.getElementById("btn-manual").style.borderColor = mode == "manual" ? "#63d259" : "#444";
+      },
+      error: function() {
+        document.getElementById("modeDisplay").innerHTML = "Device offline";
+      }
+    });
+  }
+
+    start();                   // fetch immediately on page load
+    setInterval(start, 5000);  // fetch every 5 seconds
+
+  </script>
+
+</body>
+</html>
